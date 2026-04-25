@@ -38,9 +38,9 @@ class SingleResourceManagement(Cluster[Machines, Jobs]):
 
     def tick(self) -> None:
         logger.debug("Tick %d", self.current_tick)
+        self.current_tick += 1
         self._jobs_tick()
         self._machines_tick()
-        self.current_tick += 1
 
     def _jobs_tick(self) -> None:
         for j in self.jobs:

@@ -64,7 +64,6 @@ def test_allocation_insufficient_resources(
     allocation_status = cluster.allocate(machine, job)
     assert allocation_status is AllocationStatus.INSUFFICIENT_RESOURCES
 
-
 @given(
     machines=machines_st(),
     jobs=jobs_st(),
@@ -85,8 +84,72 @@ def test_allocation_incorrect_job_status_resources(
     allocation_status = cluster.allocate(machine, job)
     assert allocation_status is AllocationStatus.UN_ALLOCATABLE_JOB
 
+@given(
+    machines=machines_st(),
+    jobs=jobs_st(),
+    j_idx=st.integers(0, 10),
+)
+@settings(suppress_health_check=[HealthCheck.filter_too_much], max_examples=2_000)
+def test_clock_tick_not_created_job(
+    machines: Machines, jobs: Jobs,
+    j_idx: int
+):
+    assume(j_idx < len(jobs))
+    job = jobs[j_idx]
+    assume(job.status is JobStatus.NotCreated)
 
-# TODO: test clock tick
+    cluster = SingleResourceManagement(machines, jobs)
+    for idx in range(job.meta.arrival_time):
+        assert job.status is JobStatus.NotCreated
+        cluster.tick()
+
+    assert job.status is JobStatus.Pending
+
+@given(
+    machines=machines_st(),
+    jobs=jobs_st(),
+    j_idx=st.integers(0, 10),
+)
+@settings(suppress_health_check=[HealthCheck.filter_too_much], max_examples=2_000)
+def test_clock_tick_not_created_job(
+        machines: Machines, jobs: Jobs,
+        j_idx: int
+):
+    assume(j_idx < len(jobs))
+    job = jobs[j_idx]
+    assume(job.status is JobStatus.NotCreated)
+
+    cluster = SingleResourceManagement(machines, jobs)
+    for idx in range(job.meta.arrival_time):
+        assert job.status is JobStatus.NotCreated
+        cluster.tick()
+
+    assert job.status is JobStatus.Pending
+    assert job.meta.run_time == 0
+
+@given(
+    machines=machines_st(),
+    jobs=jobs_st(),
+    j_idx=st.integers(0, 10),
+    m_idx=st.integers(0, 10)
+)
+@settings(suppress_health_check=[HealthCheck.filter_too_much], max_examples=2_000)
+def test_allocate_pending_job_and_tick_until_complete(
+        machines: Machines, jobs: Jobs,
+        j_idx: int, m_idx: int
+):
+    assume(m_idx < len(machines))
+    assume(j_idx < len(jobs))
+    job = jobs[j_idx]
+    machine = machines[m_idx]
+    assume(job.status is JobStatus.Pending)
+    free_space = machine.capacity - machine.usage
+    assume(free_space >= job.usage)
+    cluster = SingleResourceManagement(machines, jobs)
+    assert job.meta.arrival_time == 0
+    assert cluster.allocate(machine, job) is AllocationStatus.SUCCESS
+    cluster.tick()
+    assert job.status is JobStatus.Completed
 
 @given(machines=machines_st(), jobs=jobs_st())
 def test_simple_cluster_run_random_scheduler_until_completed(machines: Machines, jobs: Jobs):
