@@ -50,7 +50,7 @@ class SingleResourceManagementEnvironment(gym.Env[SingleResourceManagementObserv
             dtype=np.uint
         )
         length_space = gym.spaces.Box(
-            low=0,
+            low=1,
             high=1,
             shape=(n_jobs,),
             dtype=np.uint
@@ -103,9 +103,6 @@ class SingleResourceManagementEnvironment(gym.Env[SingleResourceManagementObserv
     def close(self) -> None:
         pass
 
-    def _skip_tick(self) -> tuple[SingleResourceManagementObservation, SupportsFloat, bool, bool, dict[str, Any]]:
-        return self._get_observation(), 0, False, False, {}
-
     def _get_observation(self) -> SingleResourceManagementObservation:
         _machines = np.ndarray([m.usage for m in self.cluster.machines])
         _jobs = np.ndarray([j.usage for j in self.cluster.jobs])
@@ -119,3 +116,6 @@ class SingleResourceManagementEnvironment(gym.Env[SingleResourceManagementObserv
             arrival=_arrival,
             length=_length
         )
+
+    def _skip_tick(self) -> tuple[SingleResourceManagementObservation, SupportsFloat, bool, bool, dict[str, Any]]:
+        return self._get_observation(), 0, False, False, {}

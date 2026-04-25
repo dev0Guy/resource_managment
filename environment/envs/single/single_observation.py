@@ -4,8 +4,8 @@ import numpy.typing as npt
 
 
 class SingleResourceManagementObservation(TypedDict):
-    machines: npt.NDArray[float]
-    jobs: npt.NDArray[float]
+    machines: npt.NDArray[int]
+    jobs: npt.NDArray[int]
     status: npt.NDArray[int]
     arrival: npt.NDArray[int]
     length: npt.NDArray[int]
