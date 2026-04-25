@@ -1,9 +1,7 @@
 from typing import Sequence
 from dataclasses import dataclass
-from typing import Generic, Iterable, TypeVar, Optional
-from abc import ABC
+from typing import Generic, TypeVar, Optional
 from enum import IntEnum, auto
-from abc import abstractmethod
 
 Resources = TypeVar('Resources')
 
@@ -25,9 +23,9 @@ class Metadata:
 @dataclass
 class Job(Generic[Resources]):
     length: int
-    status: JobStatus
     usage: Resources
     meta: Metadata
+    status: JobStatus
 
     def tick_until_complete(self) -> Optional[int]:
         if self.status != JobStatus.Running:

@@ -1,11 +1,11 @@
-import dataclasses
 from typing import Sequence
-from typing import Generic, TypeVar, Iterator, Protocol
+from typing import Generic, TypeVar
+from dataclasses import dataclass
 
 Resources = TypeVar('Resources')
 
 
-@dataclasses.dataclass
+@dataclass
 class Machine(Generic[Resources]):
     capacity: Resources
     usage: Resources
