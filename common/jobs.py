@@ -19,7 +19,7 @@ class JobStatus(IntEnum):
 @dataclass
 class Metadata:
     arrival_time: int
-    run_time: int
+    run_time: int = 0
 
 
 @dataclass

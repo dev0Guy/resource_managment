@@ -1,14 +1,11 @@
-from ast import TypeVar
 from resource_managment.common.machines import Machines
 from resource_managment.common.jobs import Jobs
-from typing import Protocol
+from typing import Protocol, TypeVar
 
 
-class ClockProtocol(Protocol[Jobs, Machines]):
+class ClockProtocol(Protocol):
 
-    def tick_machines(self, machines: Machines) -> None: ...
-
-    def tick_jobs(self, jobs: Jobs) -> None: ...
+    def tick(self) -> None: ...
 
 
 Clock = TypeVar('Clock', bound=ClockProtocol)

@@ -1,7 +1,6 @@
-from ast import TypeVar
-from typing import Protocol
-from resource_managment.common.jobs import Job
-from resource_managment.common.machines import Machine
+from typing import Protocol, TypeVar
+from resource_managment.common.jobs import Job, Jobs
+from resource_managment.common.machines import Machine, Machines
 from enum import IntEnum
 
 
@@ -11,9 +10,9 @@ class AllocationStatus(IntEnum):
     UN_ALLOCATABLE_JOB = 2
 
 
-class AllocatorProtocol(Protocol):
+class AllocatorProtocol(Protocol[Jobs, Machines]):
 
     def allocate(self, m: Machine, j: Job) -> AllocationStatus: ...
 
 
-Allocator = TypeVar('Allocator', bound=AllocatorProtocol)
+Allocator = TypeVar('Allocator', bound=(AllocatorProtocol,))
