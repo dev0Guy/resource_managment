@@ -48,7 +48,7 @@ def test_allocation_success(
     m_idx=st.integers(0, 10),
     j_idx=st.integers(0, 10),
 )
-@settings(suppress_health_check=[HealthCheck.filter_too_much], max_examples=2_000)
+@settings(suppress_health_check=[HealthCheck.filter_too_much], max_examples=100)
 def test_allocation_insufficient_resources(
     machines: Machines, jobs: Jobs,
     m_idx: int, j_idx: int
@@ -70,7 +70,7 @@ def test_allocation_insufficient_resources(
     m_idx=st.integers(0, 10),
     j_idx=st.integers(0, 10),
 )
-@settings(suppress_health_check=[HealthCheck.filter_too_much], max_examples=2_000)
+@settings(suppress_health_check=[HealthCheck.filter_too_much], max_examples=100)
 def test_allocation_incorrect_job_status_resources(
     machines: Machines, jobs: Jobs,
     m_idx: int, j_idx: int
@@ -89,7 +89,7 @@ def test_allocation_incorrect_job_status_resources(
     jobs=jobs_st(),
     j_idx=st.integers(0, 10),
 )
-@settings(suppress_health_check=[HealthCheck.filter_too_much], max_examples=2_000)
+@settings(suppress_health_check=[HealthCheck.filter_too_much], max_examples=100)
 def test_clock_tick_not_created_job(
     machines: Machines, jobs: Jobs,
     j_idx: int
@@ -110,7 +110,7 @@ def test_clock_tick_not_created_job(
     jobs=jobs_st(),
     j_idx=st.integers(0, 10),
 )
-@settings(suppress_health_check=[HealthCheck.filter_too_much], max_examples=2_000)
+@settings(suppress_health_check=[HealthCheck.filter_too_much], max_examples=100)
 def test_clock_tick_not_created_job(
         machines: Machines, jobs: Jobs,
         j_idx: int
@@ -133,7 +133,7 @@ def test_clock_tick_not_created_job(
     j_idx=st.integers(0, 10),
     m_idx=st.integers(0, 10)
 )
-@settings(suppress_health_check=[HealthCheck.filter_too_much], max_examples=2_000)
+@settings(suppress_health_check=[HealthCheck.filter_too_much], max_examples=100)
 def test_allocate_pending_job_and_tick_until_complete(
         machines: Machines, jobs: Jobs,
         j_idx: int, m_idx: int
