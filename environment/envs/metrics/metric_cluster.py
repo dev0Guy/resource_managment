@@ -30,7 +30,7 @@ class MetricResourceManagement(Cluster[Machines, Jobs]):
 
         free_space = m.capacity - m.usage
 
-        if np.all(j.usage > free_space):
+        if np.any(j.usage > free_space):
             logger.warning("Insufficient resources")
             return AllocationStatus.INSUFFICIENT_RESOURCES
 
