@@ -6,19 +6,20 @@ from environment.core.machines import Machines
 from environment.core.clock import ClockService
 from environment.core.allocator import Allocator
 
-ClusterCreationParameters = TypeVar('ClusterCreationParameters')
+J = TypeVar('J', bound=Jobs)
+M = TypeVar('M', bound=Machines)
 
 class Cluster(
-    Allocator[Machines, Jobs],
+    Allocator[M, J],
     ClockService,
-    Protocol[Machines, Jobs]
+    Protocol[M, J]
 ):
-    machines: Machines
-    jobs: Jobs
+    machines: M
+    jobs: J
     current_tick: int
 
 
-class ClusterCreator(Protocol[Machines, Jobs]):
+class ClusterCreator(Protocol[M, J]):
 
-    def create(self) -> Cluster[Machines, Jobs]:
+    def create(self) -> Cluster[M, J]:
         ...

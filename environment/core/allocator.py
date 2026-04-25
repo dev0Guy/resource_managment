@@ -9,7 +9,9 @@ class AllocationStatus(IntEnum):
     INSUFFICIENT_RESOURCES = 1
     UN_ALLOCATABLE_JOB = 2
 
+J = TypeVar('J', bound=Jobs)
+M = TypeVar('M', bound=Machines)
 
-class Allocator(Protocol[Jobs, Machines]):
+class Allocator(Protocol[M, J]):
 
-    def allocate(self, m: Machine, j: Job) -> AllocationStatus: ...
+    def allocate(self, m: M, j: J) -> AllocationStatus: ...

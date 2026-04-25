@@ -33,5 +33,4 @@ class Job(Generic[Resources]):
 
         return max(0, self.length - self.meta.run_time)
 
-
 Jobs = Sequence[Job[Resources]]
