@@ -1,5 +1,7 @@
+import random
+
 import numpy as np
-from hypothesis import given, strategies as st, assume, HealthCheck, settings
+from hypothesis import given, strategies as st, assume, HealthCheck, settings, reproduce_failure
 
 from environment.core.allocator import AllocationStatus
 from environment.core.jobs import JobStatus
@@ -53,7 +55,6 @@ def test_allocation_incorrect_job_status_resources(cluster: MetricResourceManage
     allocation_status = cluster.allocate(machine, job)
     assert allocation_status is AllocationStatus.UN_ALLOCATABLE_JOB
 
-
 @given(cluster=cluster_st(), data=st.data())
 @settings(suppress_health_check=[HealthCheck.filter_too_much], max_examples=100)
 def test_clock_tick_not_created_job(
@@ -91,3 +92,46 @@ def test_allocate_pending_job_and_tick_until_complete(
 
     cluster.tick()
     assert job.status is JobStatus.Completed
+
+
+@given(cluster=cluster_st())
+def test_simple_cluster_run_random_scheduler_until_completed(cluster: MetricResourceManagement):
+    max_steps = 500
+    rng = random.Random(0)
+
+    def is_finished():
+        return all(j.status == JobStatus.Completed for j in cluster.jobs)
+
+    for step in range(max_steps):
+
+        if is_finished():
+            break
+
+        pending_jobs_idx = [
+            idx for idx, j in enumerate(cluster.jobs)
+            if j.status is JobStatus.Pending
+        ]
+
+        if not pending_jobs_idx:
+            cluster.tick()
+            continue
+
+        job_idx = rng.choice(pending_jobs_idx)
+        job = cluster.jobs[job_idx]
+
+        possible_machines_idx = [
+            idx for idx, m in enumerate(cluster.machines)
+            if np.all((m.capacity - m.usage) >= job.usage)
+        ]
+
+        if not possible_machines_idx:
+            cluster.tick()
+            continue
+
+        machine_idx = rng.choice(possible_machines_idx)
+        machine = cluster.machines[machine_idx]
+
+        result = cluster.allocate(machine, job)
+        assert result is AllocationStatus.SUCCESS
+
+    assert all(j.status == JobStatus.Completed for j in cluster.jobs)

@@ -65,5 +65,6 @@ class MetricResourceManagement(Cluster[Machines, Jobs]):
     def _machines_tick(self) -> None:
         for idx, m in enumerate(self.machines):
             logger.debug("Resetting machine[%d] usage", idx)
-            m.usage[:-1] = m.usage[1:]
-            m.usage[-1] = 0
+            m.usage[:, :-1] = m.usage[:, 1:]
+            m.usage[:, -1] = 0
+
