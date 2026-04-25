@@ -1,6 +1,6 @@
 from typing import Protocol, TypeVar
-from envioremnt.core.jobs import Job, Jobs
-from envioremnt.core.machines import Machine, Machines
+from environment.core.jobs import Job, Jobs
+from environment.core.machines import Machine, Machines
 from enum import IntEnum
 
 

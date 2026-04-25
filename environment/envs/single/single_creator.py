@@ -1,9 +1,9 @@
 import random
 
-from envioremnt.core.cluster import ClusterCreator
-from envioremnt.core.jobs import Metadata, JobStatus
-from envioremnt.core.machines import Machine
-from envioremnt.envs.single.single_cluster import SingleResourceManagement, Machines, Jobs
+from environment.core.cluster import ClusterCreator
+from environment.core.jobs import Metadata, JobStatus
+from environment.core.machines import Machine
+from environment.envs.single.single_cluster import SingleResourceManagement, Machines, Jobs
 
 
 class SingleResourceManagementRandomCreator(ClusterCreator):

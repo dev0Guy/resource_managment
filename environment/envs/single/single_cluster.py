@@ -1,9 +1,9 @@
 from typing import List
 
-from envioremnt.core.allocator import AllocationStatus
-from envioremnt.core.cluster import Cluster
-from envioremnt.core.jobs import Job, JobStatus
-from envioremnt.core.machines import Machine
+from environment.core.allocator import AllocationStatus
+from environment.core.cluster import Cluster
+from environment.core.jobs import Job, JobStatus
+from environment.core.machines import Machine
 
 Jobs = List[Job[int]]
 Machines = List[Machine[int]]

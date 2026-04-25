@@ -3,12 +3,12 @@ from typing import Any, SupportsFloat
 import gymnasium as gym
 import numpy as np
 from gymnasium.core import RenderFrame
-from envioremnt.core.allocator import AllocationStatus
-from envioremnt.core.cluster import ClusterCreator
-from envioremnt.core.jobs import JobStatus
-from envioremnt.envs.single.single_action import SingleResourceManagementAction
-from envioremnt.envs.single.single_cluster import Jobs, Machines
-from envioremnt.envs.single.single_observation import SingleResourceManagementObservation
+from environment.core.allocator import AllocationStatus
+from environment.core.cluster import ClusterCreator
+from environment.core.jobs import JobStatus
+from environment.envs.single.single_action import SingleResourceManagementAction
+from environment.envs.single.single_cluster import Jobs, Machines
+from environment.envs.single.single_observation import SingleResourceManagementObservation
 
 
 class SingleResourceManagementEnvironment(gym.Env[SingleResourceManagementObservation, SingleResourceManagementAction]):
