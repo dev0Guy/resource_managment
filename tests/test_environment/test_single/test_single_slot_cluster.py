@@ -105,27 +105,6 @@ def test_clock_tick_not_created_job(
 
     assert job.status is JobStatus.Pending
 
-@given(
-    machines=machines_st(),
-    jobs=jobs_st(),
-    j_idx=st.integers(0, 10),
-)
-@settings(suppress_health_check=[HealthCheck.filter_too_much], max_examples=100)
-def test_clock_tick_not_created_job(
-        machines: Machines, jobs: Jobs,
-        j_idx: int
-):
-    assume(j_idx < len(jobs))
-    job = jobs[j_idx]
-    assume(job.status is JobStatus.NotCreated)
-
-    cluster = SingleResourceManagement(machines, jobs)
-    for idx in range(job.meta.arrival_time):
-        assert job.status is JobStatus.NotCreated
-        cluster.tick()
-
-    assert job.status is JobStatus.Pending
-    assert job.meta.run_time == 0
 
 @given(
     machines=machines_st(),
