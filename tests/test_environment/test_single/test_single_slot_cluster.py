@@ -1,7 +1,8 @@
 import random
 
-from hypothesis import given
+from hypothesis import given, strategies as st, assume, settings, HealthCheck
 
+from environment.core.allocator import AllocationStatus
 from environment.core.jobs import JobStatus
 from environment.envs.single import Machines, Jobs
 from environment.envs.single.single_cluster import SingleResourceManagement
@@ -19,7 +20,72 @@ def test_simple_cluster_creation(machines: Machines, jobs: Jobs):
     assert all(j.meta.run_time == 0 for j in cluster.jobs)
     assert all(j.meta.arrival_time >= 0 for j in cluster.jobs)
 
-# TODO: test allocation
+@given(
+    machines=machines_st(),
+    jobs=jobs_st(),
+    m_idx=st.integers(0, 10),
+    j_idx=st.integers(0, 10),
+)
+@settings(suppress_health_check=[HealthCheck.filter_too_much])
+def test_allocation_success(
+    machines: Machines, jobs: Jobs,
+    m_idx: int, j_idx: int
+):
+    assume(m_idx < len(machines))
+    assume(j_idx < len(jobs))
+    job = jobs[j_idx]
+    machine = machines[m_idx]
+    assume(job.status is JobStatus.Pending)
+    free_space = machine.capacity - machine.usage
+    assume(free_space >= job.usage)
+    cluster = SingleResourceManagement(machines, jobs)
+    allocation_status = cluster.allocate(machine, job)
+    assert allocation_status == AllocationStatus.SUCCESS
+
+@given(
+    machines=machines_st(),
+    jobs=jobs_st(),
+    m_idx=st.integers(0, 10),
+    j_idx=st.integers(0, 10),
+)
+@settings(suppress_health_check=[HealthCheck.filter_too_much], max_examples=2_000)
+def test_allocation_insufficient_resources(
+    machines: Machines, jobs: Jobs,
+    m_idx: int, j_idx: int
+):
+    assume(m_idx < len(machines))
+    assume(j_idx < len(jobs))
+    job = jobs[j_idx]
+    machine = machines[m_idx]
+    assume(job.status is JobStatus.Pending)
+    free_space = machine.capacity - machine.usage
+    assume(free_space < job.usage)
+    cluster = SingleResourceManagement(machines, jobs)
+    allocation_status = cluster.allocate(machine, job)
+    assert allocation_status is AllocationStatus.INSUFFICIENT_RESOURCES
+
+
+@given(
+    machines=machines_st(),
+    jobs=jobs_st(),
+    m_idx=st.integers(0, 10),
+    j_idx=st.integers(0, 10),
+)
+@settings(suppress_health_check=[HealthCheck.filter_too_much], max_examples=2_000)
+def test_allocation_incorrect_job_status_resources(
+    machines: Machines, jobs: Jobs,
+    m_idx: int, j_idx: int
+):
+    assume(m_idx < len(machines))
+    assume(j_idx < len(jobs))
+    job = jobs[j_idx]
+    machine = machines[m_idx]
+    assume(job.status is not JobStatus.Pending)
+    cluster = SingleResourceManagement(machines, jobs)
+    allocation_status = cluster.allocate(machine, job)
+    assert allocation_status is AllocationStatus.UN_ALLOCATABLE_JOB
+
+
 # TODO: test clock tick
 
 @given(machines=machines_st(), jobs=jobs_st())

@@ -11,13 +11,25 @@ __all__ = [
 
 
 @st.composite
+def machine_st(
+    draw
+) -> Machine[int]:
+    capacity = 255
+    usage = draw(st.integers(0, capacity))
+    return Machine(capacity, usage)
+
+
+@st.composite
 def machines_st(
     draw,
     min_size: int = 1,
     max_size: int = 5,
 ) -> list[Machine[int]]:
     n       = draw(st.integers(min_value=min_size, max_value=max_size))
-    return [Machine(capacity=255, usage=0) for _ in range(n)]
+    return [
+        draw(machine_st())
+        for _ in range(n)
+    ]
 
 
 @st.composite
