@@ -3,8 +3,7 @@ from hypothesis import given, strategies as st, assume, HealthCheck, settings
 
 from environment.core.allocator import AllocationStatus
 from environment.core.jobs import JobStatus
-from environment.envs.metrics import Machines
-from environment.envs.metrics.metric_cluster import Jobs, MetricResourceManagement
+from environment.envs.metrics.metric_cluster import MetricResourceManagement
 from tests.test_environment.test_metrics.strategies import cluster_st
 
 
