@@ -1,7 +1,7 @@
 import random
 
 from environment.core.cluster import ClusterCreator
-from environment.core.jobs import Metadata, JobStatus
+from environment.core.jobs import Metadata, JobStatus, Job
 from environment.core.machines import Machine
 from environment.envs.single.single_cluster import SingleResourceManagement, Machines, Jobs
 

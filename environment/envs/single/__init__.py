@@ -1,3 +1,4 @@
+import logging
 from typing import Any, SupportsFloat
 
 import gymnasium as gym
@@ -10,6 +11,8 @@ from environment.envs.single.single_action import SingleResourceManagementAction
 from environment.envs.single.single_cluster import Jobs, Machines
 from environment.envs.single.single_observation import SingleResourceManagementObservation
 
+
+logger = logging.getLogger(__name__)
 
 class SingleResourceManagementEnvironment(gym.Env[SingleResourceManagementObservation, SingleResourceManagementAction]):
 
@@ -68,6 +71,7 @@ class SingleResourceManagementEnvironment(gym.Env[SingleResourceManagementObserv
         seed: int | None = None,
         options: dict[str, Any] | None = None,
     ) -> tuple[SingleResourceManagementObservation, dict[str, Any]]:
+        logger.info("Resting Environment")
         self.cluster = self.creator.create()
         return self._get_observation(), {}
 
@@ -78,6 +82,7 @@ class SingleResourceManagementEnvironment(gym.Env[SingleResourceManagementObserv
             return self._skip_tick()
 
         m_idx, j_idx = action.schedule
+        logger.debug("Attempting allocation: machine=%s job=%s", m_idx, j_idx)
         allocation_result = self.cluster.allocate(self.cluster.machines[m_idx], self.cluster.jobs[j_idx])
 
         match allocation_result:
@@ -90,7 +95,6 @@ class SingleResourceManagementEnvironment(gym.Env[SingleResourceManagementObserv
                 are_all_jobs_completed = all(j.status == JobStatus.Completed for j in self.cluster.jobs)
                 are_any_jobs_left = any(j.status in possible_status_left for j in self.cluster.jobs)
                 return self._get_observation(), 0, are_all_jobs_completed, not are_any_jobs_left, {}
-
         raise RuntimeError("Should be unreachable!")
 
     def render(self) -> RenderFrame | list[RenderFrame] | None:
