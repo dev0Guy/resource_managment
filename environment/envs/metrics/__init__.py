@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 class MetricResourceManagementEnvironment(gym.Env[MetricResourceManagementObservation, MetricResourceManagementAction]):
 
+    # TODO: add render function
     def __init__(self, creator: ClusterCreator[Machines, Jobs]):
         self.creator = creator
         self.cluster = self.creator.create()
