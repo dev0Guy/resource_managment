@@ -52,3 +52,42 @@ def test_allocation_incorrect_job_status_resources(cluster: MetricResourceManage
     assume(job.status is not JobStatus.Pending)
     allocation_status = cluster.allocate(machine, job)
     assert allocation_status is AllocationStatus.UN_ALLOCATABLE_JOB
+
+
+@given(cluster=cluster_st(), data=st.data())
+@settings(suppress_health_check=[HealthCheck.filter_too_much], max_examples=100)
+def test_clock_tick_not_created_job(
+    cluster: MetricResourceManagement, data
+):
+    j_idx = data.draw(st.integers(0, len(cluster.jobs) - 1))
+    job = cluster.jobs[j_idx]
+
+    assume(job.status is JobStatus.NotCreated)
+
+    for idx in range(job.meta.arrival_time):
+        assert job.status is JobStatus.NotCreated
+        cluster.tick()
+
+    assert job.status is JobStatus.Pending
+
+@given(cluster=cluster_st(), data=st.data())
+@settings(suppress_health_check=[HealthCheck.filter_too_much], max_examples=100)
+def test_allocate_pending_job_and_tick_until_complete(
+    cluster: MetricResourceManagement, data
+):
+    m_idx = data.draw(st.integers(0, len(cluster.machines) - 1))
+    j_idx = data.draw(st.integers(0, len(cluster.jobs) - 1))
+    machine = cluster.machines[m_idx]
+    job = cluster.jobs[j_idx]
+
+    assume(job.status is JobStatus.Pending)
+    free_space = machine.capacity - machine.usage
+    assume(np.all(free_space >= job.usage))
+    assert cluster.allocate(machine, job) is AllocationStatus.SUCCESS
+
+    for idx in range(job.length):
+        assert job.status is JobStatus.Running
+        cluster.tick()
+
+    cluster.tick()
+    assert job.status is JobStatus.Completed
