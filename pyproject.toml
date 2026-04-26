@@ -14,3 +14,8 @@ dev = [
     "hypothesis>=6.152.2",
     "pytest>=9.0.3",
 ]
+experiments = [
+    "ipykernel>=7.2.0",
+    "stable-baselines3[extra]>=2.3.2",
+    "wandb>=0.25.1",
+]
