@@ -1,5 +1,5 @@
 import logging
-from typing import Any, SupportsFloat
+from typing import Any, SupportsFloat, Literal
 
 import gymnasium as gym
 import numpy as np
@@ -10,16 +10,26 @@ from environment.core.cluster import ClusterCreator
 from environment.core.jobs import Jobs, JobStatus
 from environment.envs.metrics.metric_cluster import Machines
 from environment.envs.metrics.metric_observation import MetricResourceManagementObservation
+from environment.envs.metrics.metric_renderer import ClusterMetricRenderer
 from environment.envs.metrics.metrics_action import MetricResourceManagementAction
 
 logger = logging.getLogger(__name__)
 
 class MetricResourceManagementEnvironment(gym.Env[MetricResourceManagementObservation, MetricResourceManagementAction]):
 
+    metadata = {"render_modes": ["rgb_array", "human"], "render_fps": 4}
+
     # TODO: add render function
-    def __init__(self, creator: ClusterCreator[Machines, Jobs]):
+    def __init__(
+        self,
+        creator: ClusterCreator[Machines, Jobs],
+        render_mode: Literal['human', 'rgb_array', None] = None,
+    ):
         self.creator = creator
         self.cluster = self.creator.create()
+        self.render_mode = render_mode
+
+        self._renderer = ClusterMetricRenderer(self.render_mode)
 
         n_machines = len(self.cluster.machines)
         n_jobs = len(self.cluster.jobs)
@@ -80,8 +90,9 @@ class MetricResourceManagementEnvironment(gym.Env[MetricResourceManagementObserv
         return self._get_observation(), {}
 
     def step(
-        self, action: MetricResourceManagementAction
+        self, action: tuple[int, int, int]
     ) -> tuple[MetricResourceManagementObservation, SupportsFloat, bool, bool, dict[str, Any]]:
+        action = MetricResourceManagementAction(action[0], action[1:])
         if action.skip:
             return self._skip_tick()
 
@@ -103,17 +114,22 @@ class MetricResourceManagementEnvironment(gym.Env[MetricResourceManagementObserv
         raise RuntimeError("Should be unreachable!")
 
     def render(self) -> RenderFrame | list[RenderFrame] | None:
-        pass
+        if self.render_mode is None:
+            return None
+        new_info = {"current_tick": self.cluster.current_tick}
+        new_observation = self._get_observation()
+        return self._renderer.render(new_info, new_observation)
 
     def close(self) -> None:
         pass
 
     def _get_observation(self) -> MetricResourceManagementObservation:
-        _machines = np.ndarray([m.usage for m in self.cluster.machines])
-        _jobs = np.ndarray([j.usage for j in self.cluster.jobs])
-        _status = np.ndarray([j.status for j in self.cluster.jobs])
-        _arrival = np.ndarray([j.meta.arrival_time for j in self.cluster.jobs])
-        _length = np.ndarray([j.length for j in self.cluster.jobs])
+        # TODO: check why color of machines stay aloways the same
+        _machines = np.array([m.capacity - m.usage for m in self.cluster.machines])
+        _jobs = np.array([j.usage for j in self.cluster.jobs])
+        _status = np.array([j.status for j in self.cluster.jobs])
+        _arrival = np.array([j.meta.arrival_time for j in self.cluster.jobs])
+        _length = np.array([j.length for j in self.cluster.jobs])
         return MetricResourceManagementObservation(
             machines=_machines,
             jobs=_jobs,
@@ -123,4 +139,5 @@ class MetricResourceManagementEnvironment(gym.Env[MetricResourceManagementObserv
         )
 
     def _skip_tick(self) -> tuple[MetricResourceManagementObservation, SupportsFloat, bool, bool, dict[str, Any]]:
+        self.cluster.tick()
         return self._get_observation(), 0, False, False, {}

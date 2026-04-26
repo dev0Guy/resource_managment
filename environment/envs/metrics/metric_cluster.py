@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 class MetricResourceManagement(Cluster[Machines, Jobs]):
 
     def __init__(self, machines: Machines, jobs: Jobs):
-        # TODO: make sure that the values inside are real shape
         self.machines = machines
         self.jobs = jobs
         self.current_tick = 0
