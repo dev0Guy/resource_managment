@@ -54,7 +54,7 @@ class MetricResourceManagementEnvironment(gym.Env[MetricResourceManagementObserv
         )
         status_space = gym.spaces.Box(
             low=0,
-            high=JobStatus.Failed,
+            high=len(JobStatus),
             shape=(n_jobs,),
             dtype=np.uint
         )
