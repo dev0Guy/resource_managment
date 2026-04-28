@@ -1,3 +1,4 @@
+from environment.core.jobs import JobStatus
 from collections import defaultdict
 from typing import TypedDict
 from gymnasium.wrappers import TimeLimit
@@ -5,6 +6,7 @@ from gymnasium.wrappers import TimeLimit
 import numpy as np
 import wandb
 from stable_baselines3.common.callbacks import BaseCallback
+from environment.envs.metrics.metric_info import MetricResourceManagementInformation
 
 
 class CustomMetricsCallback(BaseCallback):
@@ -39,29 +41,36 @@ class CustomMetricsCallback(BaseCallback):
         })
         self._episode_metrics.clear()
 
-
     def _on_step(self) -> bool:
+
+        info: MetricResourceManagementInformation
         for info in self.locals["infos"]:
-            job_statuses = info["jobs_status"]
+            job_statuses = info["status"]
             current_tick = info["current_tick"]
             for job_id, status in enumerate(job_statuses):
-                if status == Status.Pending:
+                if status == JobStatus.Pending:
                     self._pending_ticks[job_id] += 1
                     if job_id not in self._first_pending:
                         self._first_pending[job_id] = current_tick
-                        self._turnaround_time[job_id] = current_tick - self._first_pending[job_id]
-                if status == Status.Completed:
-                    self._turnaround_time[job_id] = current_tick - self._first_pending[job_id]
+                        self._turnaround_time[job_id] = current_tick - \
+                            self._first_pending[job_id]
+                if status == JobStatus.Completed:
+                    self._turnaround_time[job_id] = current_tick - \
+                        self._first_pending[job_id]
 
             if "episode" not in info:
                 continue
-
+        #
             if self._pending_ticks:
                 avg_pending_time = np.mean(list(self._pending_ticks.values()))
                 turnaround_time = np.mean(list(self._turnaround_time.values()))
-                self._episode_metrics["avg_pending_time"].append(avg_pending_time)
-                self._episode_metrics["avg_turnaround_time"].append(turnaround_time)
-                self._episode_metrics["avg_utilization"].append((1 - self.locals["obs_tensor"]["machines"].mean()))
-                self._episode_metrics["avg_imbalance"].append(self.locals["obs_tensor"]["machines"].std())
+                self._episode_metrics["avg_pending_time"].append(
+                    avg_pending_time)
+                self._episode_metrics["avg_turnaround_time"].append(
+                    turnaround_time)
+                self._episode_metrics["avg_utilization"].append(
+                    (1 - self.locals["obs_tensor"]["machines"].mean()))
+                self._episode_metrics["avg_imbalance"].append(
+                    self.locals["obs_tensor"]["machines"].std())
             self._pending_ticks.clear()
         return True

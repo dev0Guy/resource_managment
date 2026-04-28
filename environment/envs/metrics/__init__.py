@@ -9,6 +9,7 @@ from environment.core.allocator import AllocationStatus
 from environment.core.cluster import ClusterCreator
 from environment.core.jobs import Jobs, JobStatus
 from environment.envs.metrics.metric_cluster import Machines
+from environment.envs.metrics.metric_info import MetricResourceManagementInformation
 from environment.envs.metrics.metric_observation import MetricResourceManagementObservation
 from environment.envs.metrics.metric_renderer import ClusterMetricRenderer
 from environment.envs.metrics.metrics_action import MetricResourceManagementAction
@@ -84,14 +85,14 @@ class MetricResourceManagementEnvironment(gym.Env[MetricResourceManagementObserv
         *,
         seed: int | None = None,
         options: dict[str, Any] | None = None,
-    ) -> tuple[MetricResourceManagementObservation, dict[str, Any]]:
+    ) -> tuple[MetricResourceManagementObservation, MetricResourceManagementInformation]:
         logger.info("Resting Environment")
         self.cluster = self.creator.create()
-        return self._get_observation(), {}
+        return self._get_observation(), self.get_information()
 
     def step(
         self, action: tuple[int, int, int]
-    ) -> tuple[MetricResourceManagementObservation, SupportsFloat, bool, bool, dict[str, Any]]:
+    ) -> tuple[MetricResourceManagementObservation, SupportsFloat, bool, bool,MetricResourceManagementInformation]:
         action = MetricResourceManagementAction(action[0], action[1:])
         if action.skip:
             return self._skip_tick()
@@ -110,14 +111,14 @@ class MetricResourceManagementEnvironment(gym.Env[MetricResourceManagementObserv
                 are_all_jobs_completed = all(j.status == JobStatus.Completed for j in self.cluster.jobs)
                 are_any_jobs_left = any(j.status in possible_status_left for j in self.cluster.jobs)
                 reward = 100 if not are_any_jobs_left else -1
-                return self._get_observation(), reward, False, not are_any_jobs_left, {}
+                return self._get_observation(), reward, False, not are_any_jobs_left, self.get_information()
 
         raise RuntimeError("Should be unreachable!")
 
     def render(self) -> RenderFrame | list[RenderFrame] | None:
         if self.render_mode is None:
             return None
-        new_info = {"current_tick": self.cluster.current_tick}
+        new_info = self.get_information()
         new_observation = self._get_observation()
         return self._renderer.render(new_info, new_observation)
 
@@ -139,6 +140,14 @@ class MetricResourceManagementEnvironment(gym.Env[MetricResourceManagementObserv
             length=_length
         )
 
-    def _skip_tick(self) -> tuple[MetricResourceManagementObservation, SupportsFloat, bool, bool, dict[str, Any]]:
+    def get_information(self) -> MetricResourceManagementInformation:
+        return MetricResourceManagementInformation(
+            current_tick=self.cluster.current_tick,
+            status=[job.status for job in self.cluster.jobs],
+            arrival_time=[job.meta.arrival_time for job in self.cluster.jobs],
+            length=[job.length for job in self.cluster.jobs],
+        )
+
+    def _skip_tick(self) -> tuple[MetricResourceManagementObservation, SupportsFloat, bool, bool, MetricResourceManagementInformation]:
         self.cluster.tick()
-        return self._get_observation(), -1, False, False, {}
+        return self._get_observation(), -1, False, False, self.get_information()

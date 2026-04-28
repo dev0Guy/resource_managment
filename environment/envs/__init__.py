@@ -11,7 +11,8 @@ class Generate(EnvCreator):
             n_machines=kwargs["n_machines"],
             n_jobs=kwargs["n_jobs"],
             n_resources=kwargs["n_resources"],
-            n_ticks=kwargs["n_ticks"]
+            n_ticks=kwargs["n_ticks"],
+            offline=kwargs["offline"]
         )
         return MetricResourceManagementEnvironment(creator, render_mode=kwargs["render_mode"])
 
@@ -24,6 +25,7 @@ register(
         n_jobs=10,
         n_resources=3,
         n_ticks=5,
+        offline=True,
         render_mode=None
     )
 )

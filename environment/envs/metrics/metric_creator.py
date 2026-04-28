@@ -16,8 +16,8 @@ class MetricResourceManagementHomogeneousCreator(ClusterCreator):
         n_jobs: int,
         n_resources: int,
         n_ticks: int,
+        offline: bool,
         poisson_lambda: float = 5.0,
-        offline: bool = True
     ):
         self.n_machines = n_machines
         self.n_jobs = n_jobs
@@ -50,9 +50,12 @@ class MetricResourceManagementHomogeneousCreator(ClusterCreator):
             usage_per_job,
             (self.n_jobs, self.n_resources, self.n_ticks)
         ).copy()
-        # TODO: ADD ARIVAL TIME IN THE FUTURE
         # one value per job
-        jobs_arrival_time = np.zeros(shape=(self.n_jobs,))#np.random.randint(0, self.n_ticks, size=(self.n_jobs,))
+        jobs_arrival_time = (
+            np.zeros(shape=(self.n_jobs,))
+            if self.offline
+            else np.random.randint(0, self.n_ticks, size=(self.n_jobs,))
+        )
 
         if self.n_ticks == 1:
             jobs_length = 1
