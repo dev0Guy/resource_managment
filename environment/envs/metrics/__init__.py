@@ -44,31 +44,31 @@ class MetricResourceManagementEnvironment(gym.Env[MetricResourceManagementObserv
             low=0,
             high=255,
             shape=(n_machines, n_resource, n_ticks),
-            dtype=np.uint8
+            dtype=np.float32
         )
         jobs_space = gym.spaces.Box(
             low=0,
             high=255,
             shape=(n_jobs, n_resource, n_ticks),
-            dtype=np.uint8
+            dtype=np.float32
         )
         status_space = gym.spaces.Box(
             low=0,
             high=len(JobStatus),
             shape=(n_jobs,),
-            dtype=np.uint
+            dtype=np.float32
         )
         arrival_space = gym.spaces.Box(
             low=0,
             high=n_ticks,
             shape=(n_jobs,),
-            dtype=np.uint
+            dtype=np.float32
         )
         length_space = gym.spaces.Box(
             low=1,
             high=n_ticks,
             shape=(n_jobs,),
-            dtype=np.uint
+            dtype=np.float32
         )
 
         self.observation_space = gym.spaces.Dict({
@@ -109,7 +109,8 @@ class MetricResourceManagementEnvironment(gym.Env[MetricResourceManagementObserv
                 possible_status_left = {JobStatus.NotCreated, JobStatus.Pending}
                 are_all_jobs_completed = all(j.status == JobStatus.Completed for j in self.cluster.jobs)
                 are_any_jobs_left = any(j.status in possible_status_left for j in self.cluster.jobs)
-                return self._get_observation(), 0, are_all_jobs_completed, not are_any_jobs_left, {}
+                reward = 100 if not are_any_jobs_left else -1
+                return self._get_observation(), reward, False, not are_any_jobs_left, {}
 
         raise RuntimeError("Should be unreachable!")
 
@@ -140,4 +141,4 @@ class MetricResourceManagementEnvironment(gym.Env[MetricResourceManagementObserv
 
     def _skip_tick(self) -> tuple[MetricResourceManagementObservation, SupportsFloat, bool, bool, dict[str, Any]]:
         self.cluster.tick()
-        return self._get_observation(), 0, False, False, {}
+        return self._get_observation(), -1, False, False, {}
