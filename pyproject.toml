@@ -16,6 +16,7 @@ dev = [
 ]
 experiments = [
     "ipykernel>=7.2.0",
+    "moviepy>=2.2.1",
     "stable-baselines3[extra]>=2.3.2",
     "wandb>=0.25.1",
 ]
