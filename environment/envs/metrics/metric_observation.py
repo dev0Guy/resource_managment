@@ -9,3 +9,4 @@ class MetricResourceManagementObservation(TypedDict):
     status: npt.NDArray[int]
     arrival: npt.NDArray[int]
     length: npt.NDArray[int]
+    allocation: int
