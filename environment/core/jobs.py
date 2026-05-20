@@ -18,6 +18,7 @@ class JobStatus(IntEnum):
 class Metadata:
     arrival_time: int
     run_time: int = 0
+    schedule_time: int = -1
 
 
 @dataclass

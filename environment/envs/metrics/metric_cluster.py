@@ -36,6 +36,7 @@ class MetricResourceManagement(Cluster[Machines, Jobs]):
         m.usage += j.usage
         j.status = JobStatus.Running
         j.meta.run_time = 0
+        j.meta.schedule_time = self.current_tick
 
         return AllocationStatus.SUCCESS
 

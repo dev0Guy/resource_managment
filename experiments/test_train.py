@@ -8,12 +8,14 @@ import torch
 import sys
 import os
 
+from environment.wrappers.resource_limit_wrapper import ResourceLimitWrapper
+
 sys.path.append(os.path.abspath(".."))
 os.environ["SDL_VIDEODRIVER"] = "dummy"
 os.environ["SDL_AUDIODRIVER"] = "dummy"
 
 from environment.wrappers.time_limit_penalty import TimeLimitPenaltyWrapper
-from environment.wrappers.action_flattener import FlattenActionWrapper
+from environment.wrappers.action_flattener import FlattenActionWrapper, DiscreateFlattenActionWrapper
 from environment.wrappers.zero_by_status import ZeroJobUsageByTheirStatus
 from environment.core.jobs import JobStatus
 from experiments.utils.wandb_custome_metric import CustomMetricsCallback
@@ -30,7 +32,7 @@ import wandb
 from wandb.integration.sb3 import WandbCallback
 import logging
 
-logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(level=logging.ERROR)
 
 
 
@@ -45,7 +47,7 @@ MAX_EPISODE_STEPS = 50
 total_timesteps = 1_000_000
 
 policy_kwargs = dict(
-    net_arch=[64,32,64]
+    net_arch=[128, 64, 128]
 )
 
 config = {
@@ -53,11 +55,10 @@ config = {
     "total_timesteps": total_timesteps,
     "env_name": "resource-management-online",
     "wrappers": [
-        "Monitor",
         "TimeLimitPenaltyWrapper",
-        "ZeroJobUsageByTheirStatus",
-        # ""
-        # "ActionMasker(InvalidMetricActionMasker)"
+        "ResourceLimitWrapper",
+        "DiscreateFlattenActionWrapper",
+        "Monitor",
     ],
     "metadata": {
         "n_jobs": N_JOBS,
@@ -65,7 +66,15 @@ config = {
         "n_resources": N_RESOURCES,
         "n_ticks": N_TICKS,
         "is_offline": OFFLINE,
-        "max_episode_steps": MAX_EPISODE_STEPS
+        "max_episode_steps": MAX_EPISODE_STEPS,
+        "description": """
+            Stop run when unscheduled action selected. Make reward to be twice the number of possible rewards. 
+            Reward function: 
+                skip action -> 0.0
+                allocation -> 100 / (1 + current_tick - job_arrival_time)
+            Truncated:  step >= 50 or unscheduled action
+            State: for each machine get minimum free space, for job takes maximum
+        """,
     },
 
 }
@@ -96,7 +105,7 @@ def make_env(
         offline: bool = True,
 ):
     print(f"{n_jobs=}, {n_machines=}, {n_resources=}, {n_ticks=}, {max_episode_steps=}")
-    env = gym.make(
+    env: MetricResourceManagementEnvironment = gym.make( # type: ignore
         config["env_name"],
         render_mode="rgb_array",
         n_jobs=n_jobs,
@@ -105,12 +114,13 @@ def make_env(
         n_ticks=n_ticks,
         offline=offline,
     )
-    env = ZeroJobUsageByTheirStatus(env, JobStatus.Running, JobStatus.Completed, JobStatus.NotCreated)
+    # env = ZeroJobUsageByTheirStatus(env, JobStatus.Running, JobStatus.Completed, JobStatus.NotCreated)
     # env = MetricRewardWrapper(env)
     # env = ActionMasker(InvalidMetricActionMasker(env), mask_fn)
     env = TimeLimitPenaltyWrapper(env, max_episode_steps=MAX_EPISODE_STEPS)
+    env = ResourceLimitWrapper(env)
+    env = DiscreateFlattenActionWrapper(env)
     env = Monitor(env)
-    # MetricRewardWrapper
     return env
 
 from sb3_contrib import MaskablePPO # TODO: try with MaskablePPO
@@ -123,33 +133,20 @@ env = VecVideoRecorder(
     video_length=200,
 )
 
-wandb.config.update({
-    "env/n_jobs":      N_JOBS,
-    "env/n_machines":  N_MACHINES,
-    "env/n_resources": N_RESOURCES,
-    "env/n_ticks":     N_TICKS,
-    "env/offline":     OFFLINE,
-    "env/wrapper_stack": [
-        "ZeroJobUsageByTheirStatus(Running, Completed, NotCreated)",
-        "MetricRewardWrapper"
-        # "InvalidMetricActionMasker",
-        # "ActionMasker",
-        "Monitor",
-        "VecVideoRecorder",
-    ],
-    "env/total_timesteps": total_timesteps,
-    "model/architecture":  "PPO",
-    "model/policy":        config["policy_type"],
-    "model/net_arch":      str(policy_kwargs["net_arch"]),
-})
 
 model = PPO(
     config["policy_type"],
     env,
     policy_kwargs=policy_kwargs,
     verbose=1,
-    tensorboard_log=f"runs/{run.id}"
+    tensorboard_log=f"runs/{run.id}",
+    # changed
+    gamma=1,
+    gae_lambda=0.99,
+    n_epochs=2,
+    target_kl=0.02,
 )
+
 wandb_callback = WandbCallback(
     gradient_save_freq=1_000,
     model_save_path=f"models/{run.id}",
@@ -161,7 +158,7 @@ model.set_logger(configure(f"runs/{run.id}", ["tensorboard", "stdout"]))
 model.learn(
     total_timesteps=config["total_timesteps"],
     callback=CallbackList([
-        metric_callback,
+        # metric_callback,
         wandb_callback
     ]),
 )
@@ -206,7 +203,7 @@ vec_env = VecVideoRecorder(
     video_length=10_000,
 )
 
-model = MaskablePPO.load(MODEL_PATH, env=vec_env,  policy_kwargs=policy_kwargs)
+model = PPO.load(MODEL_PATH, env=vec_env,  policy_kwargs=policy_kwargs)
 
 # --- run episodes ---
 all_rewards, all_steps = [], []
@@ -216,8 +213,8 @@ for ep in range(EPISODES):
     total_reward, step, done = 0.0, 0, False
 
     while not done:
-        action_masks = env.valid_action_mask()
-        action, _ = model.predict(obs, deterministic=True, action_masks=action_masks)
+        # action_masks = env.valid_action_mask()
+        action, _ = model.predict(obs, deterministic=True)
         obs, reward, done, info = vec_env.step(action)
         total_reward += float(reward[0])
         step += 1

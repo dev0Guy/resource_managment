@@ -12,6 +12,7 @@ import gymnasium as gym
 
 from environment.core.jobs import JobStatus
 from environment.wrappers.invalid_metric_action_masker import InvalidMetricActionMasker
+from environment.wrappers.resource_limit_wrapper import ResourceLimitWrapper
 from environment.wrappers.time_limit_penalty import TimeLimitPenaltyWrapper
 from environment.wrappers.zero_by_status import ZeroJobUsageByTheirStatus
 
@@ -72,8 +73,9 @@ def make_env(
         n_ticks=n_ticks,
         offline=offline,
     )
-    env = ZeroJobUsageByTheirStatus(env, JobStatus.Running, JobStatus.Completed, JobStatus.NotCreated)
+    # env = ZeroJobUsageByTheirStatus(env, JobStatus.Running, JobStatus.Completed, JobStatus.NotCreated)
     env = ActionMasker(InvalidMetricActionMasker(env), mask_fn)
+    env = ResourceLimitWrapper(env)
     env = TimeLimitPenaltyWrapper(env, max_episode_steps=MAX_EPISODE_STEPS)
     env = Monitor(env)
     # MetricRewardWrapper
