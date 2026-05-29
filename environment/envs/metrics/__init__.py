@@ -29,7 +29,7 @@ class MetricResourceManagementEnvironment(gym.Env[MetricResourceManagementObserv
         render_mode: Literal['human', 'rgb_array', None] = None,
     ):
         self.creator = creator
-        self.cluster = self.creator.create()
+        self.cluster = self.creator.create(self.np_random)
         self.render_mode = render_mode
 
         self._renderer = ClusterMetricRenderer(self.render_mode)
@@ -94,9 +94,11 @@ class MetricResourceManagementEnvironment(gym.Env[MetricResourceManagementObserv
         seed: int | None = None,
         options: dict[str, Any] | None = None,
     ) -> tuple[MetricResourceManagementObservation, MetricResourceManagementInformation]:
-        logger.info("Resting Environment")
+        super().reset(seed=seed)
+        print(f"reset called with seed={seed}")
+        logger.info("Resting Environment with seed: %d", seed)
         self._allocation_status = None
-        self.cluster = self.creator.create()
+        self.cluster = self.creator.create(self.np_random)
         return self._get_observation(None), self.get_information(None)
 
 
@@ -132,7 +134,7 @@ class MetricResourceManagementEnvironment(gym.Env[MetricResourceManagementObserv
         are_any_jobs_left = any(
             j.status in possible_status_left for j in self.cluster.jobs
         )
-        terminated =  not are_any_jobs_left
+        terminated =  _are_all_jobs_completed
 
         if terminated:
             reward = 50_000
@@ -152,11 +154,11 @@ class MetricResourceManagementEnvironment(gym.Env[MetricResourceManagementObserv
     def _get_observation(self, allocation_status: Optional[int]) -> MetricResourceManagementObservation:
         # TODO: check why color of machines stay aloways the same
         _machines = np.array(
-            [m.capacity - m.usage for m in self.cluster.machines])
-        _jobs = np.array([j.usage for j in self.cluster.jobs])
-        _status = np.array([j.status for j in self.cluster.jobs])
-        _arrival = np.array([j.meta.arrival_time for j in self.cluster.jobs])
-        _length = np.array([j.length for j in self.cluster.jobs])
+            [m.capacity - m.usage for m in self.cluster.machines], dtype=np.int64)
+        _jobs = np.array([j.usage for j in self.cluster.jobs], dtype=np.int64)
+        _status = np.array([j.status for j in self.cluster.jobs], dtype=np.int64)
+        _arrival = np.array([j.meta.arrival_time for j in self.cluster.jobs], dtype=np.int64)
+        _length = np.array([j.length for j in self.cluster.jobs], dtype=np.int64)
         allocation_status = len(AllocationStatus) if allocation_status is None else allocation_status
         return MetricResourceManagementObservation(
             machines=_machines,

@@ -12,31 +12,11 @@ class InvalidMetricActionMasker(gym.Wrapper):
 
     def __init__(self, env: MetricResourceManagementEnvironment):
         super().__init__(env)
-        self.ticks_action = env.action_space[0].n
-        self.machine_n = env.action_space[1].n
-        self.job_n = env.action_space[2].n
-        self.action_space = gym.spaces.Discrete(
-            self.job_n * self.machine_n + 1)
-
-    def _decode(self, action):
-        if action == 0:
-            return np.array([1, 0, 0])
-
-        action -= 1
-        machine_idx = action % self.machine_n
-        job_idx = action // self.machine_n
-        return np.array([0, machine_idx, job_idx], dtype=np.uint32)
-
-    def _encode(self, action):
-        if action[0] == 1:
-            return 0
-        return 1 + int(action[1]) + int(action[2]) * self.machine_n
 
     def step(
         self, action: WrapperActType
     ) -> tuple[WrapperObsType, SupportsFloat, bool, bool, dict[str, Any]]:
-        original_action = self._decode(action)
-        return self.env.step(original_action)
+        return self.env.step(action)
 
     def valid_action_mask(self) -> np.ndarray:
         """
@@ -45,7 +25,7 @@ class InvalidMetricActionMasker(gym.Wrapper):
         """
         machines = self.env.unwrapped.cluster.machines
         jobs = self.env.unwrapped.cluster.jobs
-        allocation_mask = np.zeros((self.machine_n, self.job_n), dtype=bool)
+        allocation_mask = np.zeros((len(machines), len(jobs)), dtype=bool)
         for m_idx, machine in enumerate(machines):
             for j_idx, job in enumerate(jobs):
                 if job.status in (JobStatus.Running, JobStatus.Completed, JobStatus.NotCreated):
@@ -59,3 +39,8 @@ class InvalidMetricActionMasker(gym.Wrapper):
         skip_mask = np.array([skip_valid], dtype=bool)
 
         return np.concatenate([skip_mask, allocation_mask.flatten()])
+
+    def reset(
+        self, *, seed: int | None = None, options: dict[str, Any] | None = None
+    ) -> tuple[WrapperObsType, dict[str, Any]]:
+        return super().reset(seed=seed, options=options)

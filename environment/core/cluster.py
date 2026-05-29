@@ -1,6 +1,8 @@
 from lib2to3.fixes.fix_idioms import TYPE
 from typing import Protocol, TypeVar
 
+import numpy as np
+
 from environment.core.jobs import Jobs
 from environment.core.machines import Machines
 from environment.core.clock import ClockService
@@ -21,5 +23,5 @@ class Cluster(
 
 class ClusterCreator(Protocol[M, J]):
 
-    def create(self) -> Cluster[M, J]:
+    def create(self, np_random: np.random.Generator) -> Cluster[M, J]:
         ...

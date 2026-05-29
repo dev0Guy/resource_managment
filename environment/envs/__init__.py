@@ -26,6 +26,6 @@ register(
         n_resources=3,
         n_ticks=5,
         offline=True,
-        render_mode=None
-    )
+        render_mode=None,
+    ),
 )
